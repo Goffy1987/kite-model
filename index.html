@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>奥数风筝模型 - 互动课件</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:#f0f4f8;display:flex;flex-direction:column;height:100vh;overflow:hidden;
+  user-select:none;-webkit-user-select:none;
+}
+
+/* ===== Tabs ===== */
+.tab-bar{
+  display:flex;gap:6px;padding:12px 20px 0;
+  background:linear-gradient(180deg,#fff 0%,#f0f4f8 100%);
+  flex-shrink:0;
+}
+.tab{
+  padding:10px 22px;border:none;border-radius:10px 10px 0 0;
+  font-size:15px;font-weight:600;cursor:pointer;
+  background:#e2e8f0;color:#64748b;transition:all .15s;
+  letter-spacing:0.5px;
+}
+.tab:hover{background:#cbd5e0;color:#475569}
+.tab.active{background:#fff;color:#1a202c;box-shadow:0 -2px 8px rgba(0,0,0,0.04)}
+
+/* ===== Main Layout ===== */
+.main{flex:1;display:flex;overflow:hidden;background:#fff;margin:0 12px 12px;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,0.06)}
+.canvas-area{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;min-width:0}
+canvas{background:#fff;border-radius:8px;cursor:default;max-width:100%;height:auto}
+.sidebar{
+  width:350px;background:#fafbfc;border-left:1px solid #e2e8f0;
+  display:flex;flex-direction:column;overflow-y:auto;padding:20px;gap:16px;
+  flex-shrink:0;
+}
+
+/* ===== Sidebar Common ===== */
+h2{font-size:18px;color:#1a202c;border-bottom:2px solid #e2e8f0;padding-bottom:10px}
+.section{display:flex;flex-direction:column;gap:8px}
+.section-title{font-size:13px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px}
+
+.tri-row{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;background:#fff;font-size:14px;border:1px solid #edf2f7}
+.tri-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.tri-label{font-weight:600;color:#2d3748;min-width:26px}
+.tri-value{font-weight:700;color:#2d3748;margin-left:auto;font-size:15px}
+.tri-unit{color:#a0aec0;font-size:12px}
+.tri-hidden{color:#cbd5e0;font-style:italic}
+
+.eq-box{
+  padding:16px;border-radius:10px;text-align:center;font-size:14px;line-height:1.8;color:#fff;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+}
+.eq-box .big{font-size:18px;font-weight:700}
+.eq-box .check{font-size:12px;opacity:.85;margin-top:4px}
+.eq-box.match{background:linear-gradient(135deg,#11998e,#38ef7d)}
+.eq-box.off{background:#e2e8f0;color:#a0aec0}
+.eq-box.off .big{color:#718096}
+
+.ratio-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;background:#fff;font-size:13px;color:#4a5568;border:1px solid #edf2f7}
+.ratio-item code{background:#edf2f7;padding:2px 6px;border-radius:4px;font-size:12px;flex:1;text-align:center}
+.ratio-item .match{color:#11998e;font-weight:600}
+
+.btn-row{display:flex;gap:6px;flex-wrap:wrap}
+.btn{
+  padding:8px 14px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.btn-primary{background:#4a6cf7;color:#fff}
+.btn-primary:hover{background:#3b5de7}
+.btn-primary:disabled{background:#cbd5e0;color:#a0aec0;cursor:not-allowed}
+.btn-secondary{background:#e2e8f0;color:#4a5568}
+.btn-secondary:hover{background:#cbd5e0}
+.btn-danger{background:#feb2b2;color:#c53030}
+.btn-danger:hover{background:#fc8181}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+/* ===== Tutorial ===== */
+.step-indicator{display:flex;gap:4px;justify-content:center}
+.step-dot{
+  width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;background:#e2e8f0;color:#a0aec0;transition:all .3s;
+}
+.step-dot.done{background:#11998e;color:#fff}
+.step-dot.current{background:#4a6cf7;color:#fff;box-shadow:0 0 0 4px rgba(74,108,247,0.2)}
+.step-line{flex:1;height:2px;background:#e2e8f0;align-self:center;transition:all .3s}
+.step-line.done{background:#11998e}
+
+.tutorial-text{
+  background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;font-size:14px;
+  line-height:1.8;color:#4a5568
+}
+.tutorial-text .highlight{color:#4a6cf7;font-weight:700}
+.tutorial-text .formula{
+  display:block;text-align:center;font-size:18px;font-weight:700;color:#2d3748;
+  padding:12px;margin:8px 0;background:#f7fafc;border-radius:8px
+}
+
+/* ===== Practice ===== */
+.practice-question{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;font-size:14px;line-height:2;color:#4a5568}
+.practice-question .unknown{color:#e53e3e;font-weight:700;font-size:18px}
+.answer-input{padding:10px 14px;border:2px solid #e2e8f0;border-radius:8px;font-size:16px;width:100%;outline:none;transition:border-color .15s}
+.answer-input:focus{border-color:#4a6cf7}
+.feedback{padding:12px;border-radius:8px;font-size:14px;font-weight:600;text-align:center}
+.feedback.correct{background:#c6f6d5;color:#22543d}
+.feedback.wrong{background:#fed7d7;color:#742a2a}
+.score{font-size:13px;color:#718096;text-align:center}
+.score strong{color:#2d3748;font-size:16px}
+
+.legend{font-size:12px;color:#cbd5e0;text-align:center}
+.anim-indicator{font-size:12px;color:#e53e3e;text-align:center;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.3}}
+
+/* ===== Responsive ===== */
+@media(max-width:800px){
+  .main{flex-direction:column}
+  .sidebar{width:100%;max-height:40vh;border-left:none;border-top:1px solid #e2e8f0}
+  .canvas-area{min-height:50vh}
+}
+</style>
+</head>
+<body>
+
+<div class="tab-bar">
+  <button class="tab active" data-mode="free">🎨 自由探索</button>
+  <button class="tab" data-mode="tutorial">📖 逐步讲解</button>
+  <button class="tab" data-mode="practice">✏️ 练习挑战</button>
+</div>
+
+<div class="main">
+  <div class="canvas-area"><canvas id="c" width="700" height="540"></canvas></div>
+  <div class="sidebar" id="sidebar"></div>
+</div>
+
+<script>
+// ======================== GLOBAL STATE ========================
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const S = 35; // 逻辑坐标到像素的缩放因子（1逻辑单位=35像素）
+
+// 逻辑坐标辅助函数
+function ld(pix){return Math.round(pix/S)}       // 像素距离→逻辑距离（取整）
+function la(pix){return Math.round(pix/(S*S))}     // 像素面积→逻辑面积（取整）
+function logPt(p){return{x:Math.round((p.x-350)/S),y:Math.round((p.y-260)/S)}}
+// 友好的显示函数：整数则显示整数，否则保留1位小数
+function fmtLen(pix){const v=pix/S;return Math.abs(v-Math.round(v))<0.05?Math.round(v).toString():v.toFixed(1)}
+function fmtArea(pix){const v=pix/(S*S);return Math.abs(v-Math.round(v))<0.05?Math.round(v).toString():v.toFixed(1)}
+
+let mode = 'free';          // 'free' | 'tutorial' | 'practice'
+let tutorialStep = 0;      // 0-4
+let practiceProblem = null;
+let practiceScore = 0;
+let practiceTotal = 0;
+let practiceFeedback = null;
+let isAnimating = false;
+let animId = null;
+let animPhase = 0;
+
+// 默认形状：对角线垂直，AO=3, OC=5, BO=4, OD=2（逻辑单位）
+// S1=AO*BO/2=6, S2=BO*OC/2=10, S3=OC*OD/2=5, S4=OD*AO/2=3
+// 验证: 6×5=30, 10×3=30 ✓
+let vertices = [
+  { x: 350, y: 155 },      // A: O上方 AO=3 → 3×35=105px
+  { x: 490, y: 260 },      // B: O右方 BO=4 → 4×35=140px
+  { x: 350, y: 435 },      // C: O下方 OC=5 → 5×35=175px
+  { x: 280, y: 260 },      // D: O左方 OD=2 → 2×35=70px
+];
+const COLORS = ['#e53e3e','#3182ce','#38a169','#d69e2e'];
+const LIGHTS = ['rgba(229,62,62,0.18)','rgba(49,130,206,0.18)','rgba(56,161,105,0.18)','rgba(214,158,46,0.18)'];
+const LABELS = ['A','B','C','D'];
+
+let dragging = -1, showGrid = true;
+
+// ======================== MATH HELPERS ========================
+function getIntersection(p1,p2,p3,p4){
+  const d=(p1.x-p2.x)*(p3.y-p4.y)-(p1.y-p2.y)*(p3.x-p4.x);
+  if(Math.abs(d)<1e-10)return null;
+  const t=((p1.x-p3.x)*(p3.y-p4.y)-(p1.y-p3.y)*(p3.x-p4.x))/d;
+  return{x:p1.x+t*(p2.x-p1.x),y:p1.y+t*(p2.y-p1.y)};
+}
+function triArea(a,b,c){return Math.abs((a.x*(b.y-c.y)+b.x*(c.y-a.y)+c.x*(a.y-b.y))/2)}
+function dist(a,b){return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2)}
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+
+function getTris(){
+  const[A,B,C,D]=vertices;
+  const O=getIntersection(A,C,B,D);
+  if(!O)return null;
+  return[
+    {s:triArea(A,O,B),pts:[A,O,B],color:COLORS[0],lc:LIGHTS[0],label:'S₁'},
+    {s:triArea(B,O,C),pts:[B,O,C],color:COLORS[1],lc:LIGHTS[1],label:'S₂'},
+    {s:triArea(C,O,D),pts:[C,O,D],color:COLORS[2],lc:LIGHTS[2],label:'S₃'},
+    {s:triArea(D,O,A),pts:[D,O,A],color:COLORS[3],lc:LIGHTS[3],label:'S₄'},
+  ];
+}
+
+// ======================== DRAWING ========================
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+
+  if(showGrid){
+    ctx.strokeStyle='#f0f0f5';ctx.lineWidth=1;
+    for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+    for(let y=0;y<H;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+  }
+
+  if(mode==='free') drawFree();
+  else if(mode==='tutorial') drawTutorial();
+  else drawPractice();
+}
+
+function drawQuadEdges(A,B,C,D){
+  ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.lineTo(C.x,C.y);ctx.lineTo(D.x,D.y);ctx.closePath();
+  ctx.strokeStyle='#4a5568';ctx.lineWidth=2;ctx.stroke();
+}
+
+function drawDiagonals(A,B,C,D,style){
+  ctx.setLineDash(style==='dash'?[6,4]:[]);
+  ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(C.x,C.y);ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(B.x,B.y);ctx.lineTo(D.x,D.y);ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawTriangles(tris){
+  tris.forEach(t=>{
+    ctx.beginPath();ctx.moveTo(t.pts[0].x,t.pts[0].y);ctx.lineTo(t.pts[1].x,t.pts[1].y);ctx.lineTo(t.pts[2].x,t.pts[2].y);ctx.closePath();
+    ctx.fillStyle=t.lc;ctx.fill();
+    ctx.strokeStyle=t.color;ctx.lineWidth=1.5;ctx.stroke();
+  });
+}
+
+function drawTriangleLabels(tris,showValues){
+  tris.forEach(t=>{
+    const cx=(t.pts[0].x+t.pts[1].x+t.pts[2].x)/3;
+    const cy=(t.pts[0].y+t.pts[1].y+t.pts[2].y)/3;
+    ctx.fillStyle=t.color;ctx.font='bold 18px "Microsoft YaHei",sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(t.label,cx,cy-8);
+    if(showValues){
+      ctx.font='14px "Segoe UI",sans-serif';
+      ctx.fillText(fmtArea(t.s),cx,cy+14);
+    }
+  });
+}
+
+function drawPoint(p,label,color,size){
+  if(!size)size=6;
+  ctx.beginPath();ctx.arc(p.x,p.y,size,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+  if(label){
+    ctx.fillStyle='#fff';ctx.font='bold 14px "Segoe UI",sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    if(size>6)ctx.fillText(label,p.x,p.y);
+    else{ctx.fillStyle=color;ctx.fillText(label,p.x+14,p.y-8)}
+  }
+}
+
+function drawVertices(showAll){
+  vertices.forEach((v,i)=>{
+    ctx.beginPath();ctx.arc(v.x,v.y,11,0,Math.PI*2);ctx.fillStyle=LIGHTS[i];ctx.fill();
+    ctx.beginPath();ctx.arc(v.x,v.y,8,0,Math.PI*2);ctx.fillStyle=COLORS[i];ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font='bold 13px "Segoe UI",sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(LABELS[i],v.x,v.y);
+  });
+}
+
+function drawSegLabels(A,O,C,B,D){
+  const fn=(f,t,lbl,oy)=>{
+    const mx=(f.x+t.x)/2,my=(f.y+t.y)/2;
+    ctx.fillStyle='#718096';ctx.font='11px "Segoe UI",sans-serif';ctx.textAlign='center';
+    ctx.fillText(`${lbl}=${fmtLen(dist(f,t))}`,mx+oy*.5,my+oy);
+  };
+  fn(A,O,'AO',-14);fn(O,C,'OC',14);fn(B,O,'BO',14);fn(O,D,'OD',-14);
+}
+
+// ---- Free Mode Drawing ----
+function drawFree(){
+  const[A,B,C,D]=vertices;
+  const O=getIntersection(A,C,B,D);
+  const tris=O?getTris():null;
+
+  ctx.fillStyle='#cbd5e0';ctx.font='24px "Microsoft YaHei",sans-serif';ctx.textAlign='center';
+  ctx.fillText('🎯 风筝模型 · 自由探索',W/2,32);
+
+  if(tris){drawTriangles(tris)}
+  drawDiagonals(A,B,C,D,'dash');
+  drawQuadEdges(A,B,C,D);
+  if(O)drawPoint(O,'O','#2d3748',5);
+  if(tris){
+    drawTriangleLabels(tris,true);
+    drawSegLabels(A,O,C,B,D);
+  }
+  drawVertices();
+
+  if(isAnimating){
+    ctx.fillStyle='#e53e3e';ctx.font='bold 14px "Microsoft YaHei",sans-serif';
+    ctx.fillText('▶ 自动演示中...',W/2,H-16);
+  }
+
+  renderFreeSidebar(tris,O);
+}
+
+// ---- Tutorial Mode Drawing ----
+function drawTutorial(){
+  const[A,B,C,D]=vertices;
+  const O=getIntersection(A,C,B,D);
+  const tris=O?getTris():null;
+
+  ctx.fillStyle='#4a6cf7';ctx.font='22px "Microsoft YaHei",sans-serif';ctx.textAlign='center';
+  ctx.fillText('📖 逐步讲解',W/2,32);
+
+  // Step 0: 四边形
+  if(tutorialStep>=0){drawQuadEdges(A,B,C,D);drawVertices()}
+
+  // Step 1: 对角线
+  if(tutorialStep>=1&&O){
+    drawDiagonals(A,B,C,D,'dash');
+    drawPoint(O,'O','#2d3748',5);
+  }
+
+  // Step 2: 三角形着色
+  if(tutorialStep>=2&&tris){drawTriangles(tris);drawTriangleLabels(tris,false)}
+
+  // Step 3: 面积数值
+  if(tutorialStep>=3&&tris){drawTriangleLabels(tris,true);drawSegLabels(A,O,C,B,D)}
+
+  // Step 4: 高亮等式
+  if(tutorialStep>=4&&tris){
+    const s=tris.map(t=>la(t.s));
+    const left=s[0]*s[2],right=s[1]*s[3];
+    ctx.fillStyle='rgba(17,153,142,0.12)';
+    ctx.fillRect(0,H-60,W,60);
+    ctx.fillStyle='#11998e';ctx.font='bold 20px "Microsoft YaHei",sans-serif';
+    ctx.fillText(`S₁×S₃ = ${left} = S₂×S₄ = ${right}  ✅`,W/2,H-30);
+  }
+
+  renderTutorialSidebar(tris,O);
+}
+
+// ---- Practice Mode Drawing ----
+function drawPractice(){
+  const[A,B,C,D]=vertices;
+  const O=getIntersection(A,C,B,D);
+  const tris=O?getTris():null;
+  if(!tris)return;
+
+  ctx.fillStyle='#d69e2e';ctx.font='22px "Microsoft YaHei",sans-serif';ctx.textAlign='center';
+  ctx.fillText('✏️ 练习挑战',W/2,32);
+
+  drawTriangles(tris);drawDiagonals(A,B,C,D,'dash');drawQuadEdges(A,B,C,D);
+  drawPoint(O,'O','#2d3748',5);
+
+  // Show 3 known + 1 hidden (logical areas)
+  tris.forEach((t,i)=>{
+    const cx=(t.pts[0].x+t.pts[1].x+t.pts[2].x)/3;
+    const cy=(t.pts[0].y+t.pts[1].y+t.pts[2].y)/3;
+    ctx.fillStyle=t.color;ctx.font='bold 18px "Microsoft YaHei",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(t.label,cx,cy-10);
+    ctx.font='15px "Segoe UI",sans-serif';
+    if(practiceProblem&&practiceProblem.hidden===i){
+      ctx.fillStyle='#e53e3e';ctx.fillText('?',cx,cy+16);
+    }else{
+      ctx.fillText(fmtArea(t.s),cx,cy+16);
+    }
+  });
+
+  drawVertices();
+  renderPracticeSidebar(tris);
+}
+
+// ======================== SIDEBAR RENDERING ========================
+function renderFreeSidebar(tris,O){
+  const sb=document.getElementById('sidebar');
+  if(!tris){
+    sb.innerHTML=`<h2>🎯 风筝模型</h2><p style="color:#a0aec0;text-align:center;padding:40px 0">拖动顶点开始探索</p>`;
+    return;
+  }
+  const s=tris.map(t=>t.s);           // 原始像素面积（精确值）
+  const ls=s.map(v=>la(v));           // 显示用的逻辑面积（取整）
+  // 用原始像素面积验证等式，避免四舍五入导致误判
+  const rawLeft=s[0]*s[2],rawRight=s[1]*s[3];
+  const diff=Math.abs(rawLeft-rawRight);
+  const match=diff<0.5;               // 像素级精度容差
+
+  const[A,B,C,D]=vertices;
+  const lAO=ld(dist(A,O)),lOC=ld(dist(O,C)),lBO=ld(dist(B,O)),lOD=ld(dist(O,D));
+  // 从原始像素面积精确计算逻辑乘积，保证两侧永远相等
+  const trueProd=match?Math.round(rawLeft/(S*S*S*S)):null;
+  const checkMsg=match
+    ?`✅ 完全相等！乘积 = ${trueProd}`
+    :'⚠️ 当前形状四边形不自交，拖动顶点验证';
+
+  sb.innerHTML=`
+<h2>🎯 风筝模型</h2>
+<div class="section">
+  <div class="section-title">四个三角形面积</div>
+  ${tris.map(t=>`<div class="tri-row"><span class="tri-dot" style="background:${t.color}"></span><span class="tri-label">${t.label}</span><span class="tri-value">${fmtArea(t.s)}</span><span class="tri-unit">平方单位</span></div>`).join('')}
+</div>
+<div class="section">
+  <div class="section-title">核心定理</div>
+  <div class="eq-box${match?' match':''}">
+    <div>S₁ × S₃ = S₂ × S₄</div>
+    <div class="big">${match?`S₁×S₃ = S₂×S₄ = <strong>${trueProd}</strong>`:'S₁×S₃ = S₂×S₄'}</div>
+    <div class="check">${checkMsg}</div>
+  </div>
+</div>
+<div class="section">
+  <div class="section-title">线段长度（逻辑单位）</div>
+  <div class="ratio-item"><span>AO</span><code>${fmtLen(dist(A,O))}</code><span>OC</span><code>${fmtLen(dist(O,C))}</code><span>AO:OC</span><code>${(ld(dist(A,O))/ld(dist(O,C))).toFixed(2)}</code></div>
+  <div class="ratio-item"><span>BO</span><code>${fmtLen(dist(B,O))}</code><span>OD</span><code>${fmtLen(dist(O,D))}</code><span>BO:OD</span><code>${(ld(dist(B,O))/ld(dist(O,D))).toFixed(2)}</code></div>
+</div>
+<div class="section">
+  <div class="section-title">面积比 = 线段比</div>
+  <div class="ratio-item"><span>S₁:S₂=${(s[0]/(s[1]||1)).toFixed(2)}</span><code>AO:OC=${(dist(A,O)/dist(O,C)).toFixed(2)}</code></div>
+  <div class="ratio-item"><span>S₂:S₃=${(s[1]/(s[2]||1)).toFixed(2)}</span><code>BO:OD=${(dist(B,O)/dist(O,D)).toFixed(2)}</code></div>
+</div>
+<div class="section">
+  <div class="section-title">预设形状</div>
+  <div class="btn-row">
+    <button class="btn btn-sm btn-secondary" onclick="preset('square')">正方形</button>
+    <button class="btn btn-sm btn-secondary" onclick="preset('rect')">矩形</button>
+    <button class="btn btn-sm btn-secondary" onclick="preset('trap')">梯形</button>
+    <button class="btn btn-sm btn-secondary" onclick="preset('para')">平行四边形</button>
+    <button class="btn btn-sm btn-secondary" onclick="preset('kite')">风筝形</button>
+    <button class="btn btn-sm btn-secondary" onclick="preset('random')">随机</button>
+  </div>
+</div>
+<div class="btn-row">
+  <button class="btn btn-primary" onclick="resetShape()">重置形状</button>
+  <button class="btn btn-secondary" onclick="toggleGrid()">切换网格</button>
+  <button class="btn ${isAnimating?'btn-danger':'btn-secondary'}" onclick="toggleAnim()">${isAnimating?'⏹ 停止演示':'▶ 自动演示'}</button>
+</div>
+${isAnimating?'<div class="anim-indicator">● 顶点自动运动中，观察面积关系变化</div>':'<div class="legend">拖动四个彩色顶点自由探索</div>'}
+`;
+}
+
+function renderTutorialSidebar(tris,O){
+  const sb=document.getElementById('sidebar');
+  const steps=[
+    {title:'① 认识四边形',text:'任意凸四边形 <span class="highlight">ABCD</span>，四个顶点按顺时针排列。这是我们的起点。'},
+    {title:'② 连接对角线',text:'连接对角线 <span class="highlight">AC</span> 和 <span class="highlight">BD</span>，两线交于点 <span class="highlight">O</span>。<br><br>点 O 将每条对角线分成两段：<br>AC → AO + OC<br>BD → BO + OD'},
+    {title:'③ 划分四个三角形',text:'两条对角线将四边形分成四个三角形：<br><span style="color:#e53e3e">S₁ = △AOB</span><br><span style="color:#3182ce">S₂ = △BOC</span><br><span style="color:#38a169">S₃ = △COD</span><br><span style="color:#d69e2e">S₄ = △DOA</span>'},
+    {title:'④ 面积比 = 线段比',text:'关键发现：<br><span class="highlight">等高三角形面积比 = 底边比</span><br><br>S₁:S₂ = AO:OC<br>S₂:S₃ = BO:OD<br>S₃:S₄ = CO:OA<br>S₄:S₁ = DO:OB<br><br>这四条比例正好能推出核心结论！'},
+    {title:'⑤ 核心结论',text:'<span class="formula">S₁ × S₃ = S₂ × S₄</span>由面积比=线段比推导：<br>(S₁/S₂)×(S₃/S₄) = (AO/OC)×(CO/OA) = 1<br>∴ S₁×S₃ = S₂×S₄<br><br><span class="highlight">风筝模型定理：交叉三角形面积乘积相等。</span><br><br><small style="color:#a0aec0">本例：AO=3,OC=5,BO=4,OD=2<br>S₁=6,S₂=10,S₃=5,S₄=3<br>6×5=30=10×3 ✓</small>'},
+  ];
+  const s=steps[tutorialStep];
+  const[A,B,C,D]=vertices;
+  let segHTML='';
+  if(O&&tutorialStep>=3){
+    segHTML=`<div class="section"><div class="section-title">实际数值验证</div>
+      <div class="ratio-item"><span>AO:OC</span><code>${fmtLen(dist(A,O))}:${fmtLen(dist(O,C))} = ${(dist(A,O)/dist(O,C)).toFixed(2)}</code></div>
+      <div class="ratio-item"><span>BO:OD</span><code>${fmtLen(dist(B,O))}:${fmtLen(dist(O,D))} = ${(dist(B,O)/dist(O,D)).toFixed(2)}</code></div>
+    </div>`;
+  }
+  let eqHTML='';
+  if(tris&&tutorialStep>=4){
+    const s4=tris.map(t=>fmtArea(t.s));
+    eqHTML=`<div class="section"><div class="section-title">验证等式</div>
+      <div class="eq-box match">
+        <div class="big">${s4[0]}×${s4[2]} = ${la(tris[0].s)*la(tris[2].s)}</div>
+        <div class="big">${s4[1]}×${s4[3]} = ${la(tris[1].s)*la(tris[3].s)}</div>
+        <div class="check">✅ 相等！定理成立</div>
+      </div>
+    </div>`;
+  }
+
+  sb.innerHTML=`
+<h2>📖 逐步讲解</h2>
+<div class="step-indicator">
+  ${[0,1,2,3,4].map(i=>{
+    let cls='step-dot';if(i<tutorialStep)cls+=' done';if(i===tutorialStep)cls+=' current';
+    return `<div class="${cls}">${i+1}</div>${i<4?`<div class="step-line${i<tutorialStep?' done':''}"></div>`:''}`;
+  }).join('')}
+</div>
+<div class="section">
+  <div class="section-title" style="font-size:15px;color:#1a202c">${s.title}</div>
+  <div class="tutorial-text">${s.text}</div>
+</div>
+${segHTML}
+${eqHTML}
+<div class="btn-row">
+  <button class="btn btn-secondary" onclick="tutorialPrev()" ${tutorialStep===0?'disabled':''}>← 上一步</button>
+  <button class="btn btn-primary" onclick="tutorialNext()" ${tutorialStep===4?'disabled':''}>下一步 →</button>
+</div>
+<div class="btn-row">
+  <button class="btn btn-sm btn-secondary" onclick="resetShape()">重置图形</button>
+  <button class="btn btn-sm btn-secondary" onclick="switchMode('free')">去自由探索</button>
+</div>
+`;
+}
+
+function renderPracticeSidebar(tris){
+  const sb=document.getElementById('sidebar');
+  if(!tris){
+    sb.innerHTML=`<h2>✏️ 练习挑战</h2><p style="color:#a0aec0;text-align:center;padding:40px 0">加载中...</p>`;
+    return;
+  }
+  // 始终显示四个面积（用fmtArea取得1位小数友好显示）
+  const areas=tris.map(t=>t.s/(S*S));        // 精确逻辑面积
+  const dispAreas=tris.map(t=>fmtArea(t.s)); // 显示字符串
+  const hidden=practiceProblem?practiceProblem.hidden:-1;
+  const hasQuestion=hidden>=0;
+  const shownLabels=tris.map((t,i)=>i===hidden?null:`S${i+1} = ${dispAreas[i]}`).filter(Boolean).join('，');
+  const hiddenLabel=hasQuestion?`S${hidden+1}`:'';
+
+  let fbHTML='';
+  if(practiceFeedback==='correct'){
+    fbHTML=`<div class="feedback correct">✅ 正确！${hiddenLabel} = ${dispAreas[hidden]}</div>`;
+  }else if(practiceFeedback==='wrong'){
+    fbHTML=`<div class="feedback wrong">❌ 不对哦，正确答案是 ${dispAreas[hidden]}</div>`;
+  }
+
+  sb.innerHTML=`
+<h2>✏️ 练习挑战</h2>
+<div class="score">得分：<strong>${practiceScore}</strong> / ${practiceTotal} 题</div>
+<div class="section">
+  <div class="section-title">四个三角形面积</div>
+  ${tris.map((t,i)=>{
+    const a=dispAreas[i];
+    const isHidden=hasQuestion&&i===hidden;
+    return `<div class="tri-row">
+      <span class="tri-dot" style="background:${t.color}"></span>
+      <span class="tri-label">${t.label}</span>
+      <span class="tri-value" style="color:${isHidden?'#e53e3e':'#1a202c'}">${isHidden?'?':a}</span>
+      ${!isHidden?`<span class="tri-unit">平方单位</span>`:''}
+    </div>`;
+  }).join('')}
+</div>
+${hasQuestion?`
+<div class="section">
+  <div class="section-title">题目</div>
+  <div class="practice-question">
+    已知：${shownLabels}<br>
+    求：<span class="unknown">${hiddenLabel} = ?</span>
+  </div>
+</div>
+${fbHTML}
+<div class="section">
+  <input type="number" step="any" class="answer-input" id="answerInput" placeholder="输入你的答案..." onkeydown="if(event.key==='Enter')checkAnswer()">
+</div>
+<div class="btn-row">
+  <button class="btn btn-primary" onclick="checkAnswer()">提交答案</button>
+  <button class="btn btn-secondary" onclick="newProblem()">换一题</button>
+</div>
+`:`
+<div class="section" style="text-align:center;color:#718096;font-size:13px">
+  拖动顶点自定义形状<br>或点击下方按钮随机出题
+</div>
+<div class="btn-row">
+  <button class="btn btn-primary" onclick="startPracticeQuestion()">隐藏一个出题</button>
+  <button class="btn btn-secondary" onclick="newProblem()">随机生成新题</button>
+</div>
+`}
+<div class="btn-row" style="margin-top:8px">
+  <button class="btn btn-sm btn-secondary" onclick="switchMode('free')">去自由探索</button>
+  <button class="btn btn-sm btn-secondary" onclick="switchMode('tutorial')">去看讲解</button>
+</div>
+`;
+}
+
+// ======================== MODE SWITCHING ========================
+function switchMode(m){
+  mode=m;
+  tutorialStep=0;
+  practiceFeedback=null;
+  stopAnim();
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.mode===m));
+  if(m==='tutorial')resetShape();  // 讲解模式固定用例题数据
+  if(m==='practice'){
+    practiceProblem=null;  // 进入练习模式不自动出题，让用户先拖
+  }
+  draw();
+}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>switchMode(t.dataset.mode));
+});
+
+// ======================== PRESETS ========================
+function preset(type){
+  stopAnim();
+  if(mode==='practice')practiceProblem=null;  // 练习模式切换形状时重置题目
+  const CX=350,CY=260;
+  switch(type){
+    case'square':vertices=[{x:CX,y:CY-4*S},{x:CX+4*S,y:CY},{x:CX,y:CY+4*S},{x:CX-4*S,y:CY}];break;
+    case'rect':vertices=[{x:CX,y:CY-3*S},{x:CX+6*S,y:CY},{x:CX,y:CY+5*S},{x:CX-6*S,y:CY}];break;
+    case'trap':vertices=[{x:CX,y:CY-3*S},{x:CX+5*S,y:CY},{x:CX,y:CY+6*S},{x:CX-3*S,y:CY}];break;
+    case'para':vertices=[{x:CX,y:CY-3*S},{x:CX+5*S,y:CY},{x:CX,y:CY+4*S},{x:CX-5*S,y:CY}];break;
+    case'kite':vertices=[{x:CX,y:CY-6*S},{x:CX+3*S,y:CY},{x:CX,y:CY+4*S},{x:CX-3*S,y:CY}];break;
+    case'random':
+      const p=()=>[2,2,3,3,4,4,5,5,6,6,7,8][Math.floor(Math.random()*12)];
+      const a=p(),c=p(),b=p(),d=p();
+      vertices=[{x:CX,y:CY-a*S},{x:CX+b*S,y:CY},{x:CX,y:CY+c*S},{x:CX-d*S,y:CY}];
+      if(!getIntersection(vertices[0],vertices[2],vertices[1],vertices[3]))preset('random');
+      break;
+  }
+  draw();
+}
+
+// ======================== AUTO ANIMATION ========================
+function toggleAnim(){
+  if(isAnimating){stopAnim();draw();return}
+  isAnimating=true;animPhase=0;
+  function step(){
+    if(!isAnimating)return;
+    animPhase+=0.02;
+    const CX=350,CY=260;
+    // D点绕O做小幅圆周运动，保持AO,OC,BO不变
+    vertices[0]={x:CX,y:CY-3*S};                                     // A固定
+    vertices[1]={x:CX+4*S,y:CY};                                     // B固定
+    vertices[2]={x:CX,y:CY+5*S};                                     // C固定
+    vertices[3]={x:CX-Math.round((2+Math.sin(animPhase*1.3))*S),y:CY+Math.round(Math.cos(animPhase*0.9)*S*1.5)};
+    draw();
+    animId=requestAnimationFrame(step);
+  }
+  animId=requestAnimationFrame(step);
+}
+function stopAnim(){isAnimating=false;if(animId)cancelAnimationFrame(animId);animId=null}
+
+// ======================== TUTORIAL NAV ========================
+function tutorialNext(){if(tutorialStep<4){tutorialStep++;draw()}}
+function tutorialPrev(){if(tutorialStep>0){tutorialStep--;draw()}}
+
+// ======================== PRACTICE ========================
+function startPracticeQuestion(){
+  const tris=getTris();
+  if(!tris)return;
+  practiceFeedback=null;
+  practiceProblem={hidden:Math.floor(Math.random()*4),areas:tris.map(t=>t.s/(S*S))};
+  draw();
+}
+
+function newProblem(){
+  practiceFeedback=null;
+  stopAnim();
+  const CX=350,CY=260;
+  // 生成不规则四边形（对角线交点O一定在ABCD内部）
+  // 构造原理：A/C在O的两侧（k1<0），B/D在O的两侧（k2<0）
+  //   → O必在对角线交点且在四边形内部
+  //   → det=ax*by-ay*bx偶数 → 面积为整数
+  let ok=false;
+  for(let t=0;t<200;t++){
+    let ax=randInt(1,6), ay=randInt(-4,4);
+    let bx=randInt(-6,6), by=randInt(1,6);
+    const det=ax*by-ay*bx;
+    if(Math.abs(det)%2!==0||Math.abs(det)<2)continue;
+    if(Math.abs(det)<Math.sqrt(ax*ax+ay*ay)*Math.sqrt(bx*bx+by*by)*0.15)continue;
+    const k1=-randInt(1,4), k2=-randInt(1,3);  // 两个都负数 → O在四边形内部
+    if(Math.abs(k1*ax)*S>340||Math.abs(k1*ay)*S>250)continue;
+    if(Math.abs(k2*bx)*S>340||Math.abs(k2*by)*S>250)continue;
+    vertices[0]={x:CX+ax*S,y:CY+ay*S};
+    vertices[1]={x:CX+bx*S,y:CY+by*S};
+    vertices[2]={x:CX+k1*ax*S,y:CY+k1*ay*S};   // C在A的反向
+    vertices[3]={x:CX+k2*bx*S,y:CY+k2*by*S};   // D在B的反向
+    // 验证O确实在线段中间（O到A+C距离和≈AC长度）
+    const O=getIntersection(vertices[0],vertices[2],vertices[1],vertices[3]);
+    if(!O)continue;
+    const dAC=dist(vertices[0],vertices[2]), dBD=dist(vertices[1],vertices[3]);
+    if(Math.abs(dist(vertices[0],O)+dist(O,vertices[2])-dAC)>1)continue;
+    if(Math.abs(dist(vertices[1],O)+dist(O,vertices[3])-dBD)>1)continue;
+    ok=true;break;
+  }
+  if(!ok)resetShape();
+  const tris=getTris();
+  practiceProblem={hidden:Math.floor(Math.random()*4),areas:tris.map(t=>t.s/(S*S))};
+  if(mode==='practice')draw();
+}
+
+function checkAnswer(){
+  if(!practiceProblem)return;
+  const input=document.getElementById('answerInput');
+  const val=parseFloat(input.value);
+  if(isNaN(val))return;
+  const tris=getTris();
+  const correct=tris[practiceProblem.hidden].s/(S*S);  // 精确逻辑面积
+  // 容差0.05匹配fmtArea的取整逻辑（整数或.5都接受）
+  if(Math.abs(val-correct)<0.05){
+    practiceFeedback='correct';practiceScore++;practiceTotal++;
+  }else{
+    practiceFeedback='wrong';practiceTotal++;
+  }
+  if(mode==='practice')draw();
+  // 2秒后清除反馈，允许继续答题或拖拽
+  setTimeout(()=>{practiceFeedback=null;draw()},2000);
+}
+
+// ======================== SHARED CONTROLS ========================
+function resetShape(){
+  stopAnim();
+  // AO=3, OC=5, BO=4, OD=2（逻辑单位）
+  vertices=[{x:350,y:155},{x:490,y:260},{x:350,y:435},{x:280,y:260}];
+  draw();
+}
+function toggleGrid(){showGrid=!showGrid;draw()}
+
+// ======================== INTERACTION ========================
+function getCanvasPos(e){
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=W/rect.width,scaleY=H/rect.height;
+  return{x:(e.clientX-rect.left)*scaleX,y:(e.clientY-rect.top)*scaleY};
+}
+
+canvas.addEventListener('mousedown',e=>{
+  if(mode==='tutorial')return;
+  const p=getCanvasPos(e);
+  dragging=vertices.findIndex(v=>dist(v,p)<16);
+  if(dragging>=0){stopAnim();canvas.style.cursor='grabbing'}
+});
+
+canvas.addEventListener('mousemove',e=>{
+  const p=getCanvasPos(e);
+  if(dragging>=0){
+    vertices[dragging].x=Math.max(20,Math.min(W-20,p.x));
+    vertices[dragging].y=Math.max(20,Math.min(H-20,p.y));
+    // 练习模式拖拽时实时更新题目答案
+    if(mode==='practice'&&practiceProblem){
+      const tris=getTris();
+      if(tris)practiceProblem.areas=tris.map(t=>t.s/(S*S));
+    }
+    draw();
+  }else{
+    const over=vertices.findIndex(v=>dist(v,p)<16);
+    canvas.style.cursor=over>=0&&mode!=='tutorial'?'grab':'default';
+  }
+});
+
+canvas.addEventListener('mouseup',()=>{dragging=-1;canvas.style.cursor='default'});
+canvas.addEventListener('mouseleave',()=>{dragging=-1;canvas.style.cursor='default'});
+
+canvas.addEventListener('touchstart',e=>{
+  if(mode==='tutorial')return;
+  e.preventDefault();
+  const rect=canvas.getBoundingClientRect();
+  const p={x:(e.touches[0].clientX-rect.left)*(W/rect.width),y:(e.touches[0].clientY-rect.top)*(H/rect.height)};
+  dragging=vertices.findIndex(v=>dist(v,p)<26);
+  if(dragging>=0)stopAnim();
+});
+
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(dragging<0)return;
+  const rect=canvas.getBoundingClientRect();
+  const p={x:(e.touches[0].clientX-rect.left)*(W/rect.width),y:(e.touches[0].clientY-rect.top)*(H/rect.height)};
+  vertices[dragging].x=Math.max(20,Math.min(W-20,p.x));
+  vertices[dragging].y=Math.max(20,Math.min(H-20,p.y));
+  // 练习模式拖拽时实时更新题目答案
+  if(mode==='practice'&&practiceProblem){
+    const tris=getTris();
+    if(tris)practiceProblem.areas=tris.map(t=>t.s/(S*S));
+  }
+  draw();
+});
+
+canvas.addEventListener('touchend',()=>{dragging=-1});
+
+// ======================== INIT ========================
+draw();
+</script>
+</body>
+</html>
