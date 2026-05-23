@@ -145,9 +145,9 @@ const S = 35; // 逻辑坐标到像素的缩放因子（1逻辑单位=35像素�
 function ld(pix){return Math.round(pix/S)}       // 像素距离→逻辑距离（取整）
 function la(pix){return Math.round(pix/(S*S))}     // 像素面积→逻辑面积（取整）
 function logPt(p){return{x:Math.round((p.x-350)/S),y:Math.round((p.y-260)/S)}}
-// 友好的显示函数：整数则显示整数，否则保留1位小数
-function fmtLen(pix){const v=pix/S;return Math.abs(v-Math.round(v))<0.05?Math.round(v).toString():v.toFixed(1)}
-function fmtArea(pix){const v=pix/(S*S);return Math.abs(v-Math.round(v))<0.05?Math.round(v).toString():v.toFixed(1)}
+// 友好的显示函数：最多2位小数，整数则不显示小数
+function fmtLen(pix){const v=pix/S;if(Math.abs(v-Math.round(v))<0.005)return Math.round(v).toString();if(Math.abs(v*10-Math.round(v*10))<0.05)return v.toFixed(1);return v.toFixed(2)}
+function fmtArea(pix){const v=pix/(S*S);if(Math.abs(v-Math.round(v))<0.005)return Math.round(v).toString();if(Math.abs(v*10-Math.round(v*10))<0.05)return v.toFixed(1);return v.toFixed(2)}
 
 let mode = 'free';          // 'free' | 'tutorial' | 'practice'
 let tutorialStep = 0;      // 0-4
@@ -388,8 +388,8 @@ function renderFreeSidebar(tris,O){
 
   const[A,B,C,D]=vertices;
   const lAO=ld(dist(A,O)),lOC=ld(dist(O,C)),lBO=ld(dist(B,O)),lOD=ld(dist(O,D));
-  // 从原始像素面积精确计算逻辑乘积，保证两侧永远相等
-  const trueProd=match?Math.round(rawLeft/(S*S*S*S)):null;
+  // 从原始像素面积精确计算逻辑乘积（2位小数），保证两侧永远相等
+  const trueProd=match?(rawLeft/(S*S*S*S)).toFixed(2):null;
   const checkMsg=match
     ?`✅ 完全相等！乘积 = ${trueProd}`
     :'⚠️ 当前形状四边形不自交，拖动顶点验证';
@@ -677,8 +677,8 @@ function checkAnswer(){
   if(isNaN(val))return;
   const tris=getTris();
   const correct=tris[practiceProblem.hidden].s/(S*S);  // 精确逻辑面积
-  // 容差0.05匹配fmtArea的取整逻辑（整数或.5都接受）
-  if(Math.abs(val-correct)<0.05){
+  // 容差0.005匹配2位小数显示
+  if(Math.abs(val-correct)<0.005){
     practiceFeedback='correct';practiceScore++;practiceTotal++;
   }else{
     practiceFeedback='wrong';practiceTotal++;
